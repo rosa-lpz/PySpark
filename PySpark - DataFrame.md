@@ -244,6 +244,111 @@ df_spark = spark.createDataFrame(pdf)
 # Convert back to Pandas DataFrame
 pdf_new = df_spark.toPandas()Powered By 
 ```
+## Change Column Names & DataTypes while Converting
+
+If you want to change the schema (column name & data type) while converting pandas to PySpark DataFrame, create a [PySpark Schema using StructType](https://sparkbyexamples.com/pyspark/pyspark-structtype-and-structfield/) and use it for the schema.
+
+```python
+from pyspark.sql.types import StructType,StructField, StringType, IntegerType
+#Create User defined Custom Schema using StructType
+mySchema = StructType([ StructField("First Name", StringType(), True)\
+                       ,StructField("Age", IntegerType(), True)])
+
+#Create DataFrame by changing schema
+sparkDF2 = spark.createDataFrame(pandasDF,schema=mySchema)
+sparkDF2.printSchema()
+sparkDF2.show()
+
+#Outputs below schema & DataFrame
+
+root
+ |-- First Name: string (nullable = true)
+ |-- Age: integer (nullable = true)
+
++----------+---+
+|First Name|Age|
++----------+---+
+|     Scott| 50|
+|      Jeff| 45|
+|    Thomas| 54|
+|       Ann| 34|
++----------+---+
+```
+
+## Use Apache Arrow to Convert Pandas to Spark DataFrame
+
+Using Apache Arrow to convert a Pandas DataFrame to a Spark DataFrame involves leveraging Arrow’s efficient in-memory columnar representation for data interchange between Pandas and Spark. This process enhances performance by minimizing data serialization and deserialization overhead.
+
+To accomplish this conversion, first, ensure that both Pandas and PySpark are Arrow-enabled. Then, utilize Arrow’s capabilities to directly convert Pandas DataFrame to Arrow format, followed by converting Arrow format to Spark DataFrame using PyArrow.
+
+Install `pip install pyspark[sql]` or by directly downloading from [Apache Arrow for Python](https://arrow.apache.org/docs/python/install.html) to work with Arrow.
+
+```python
+spark.conf.set("spark.sql.execution.arrow.enabled","true")
+sparkDF=spark.createDataFrame(pandasDF) 
+sparkDF.printSchema()
+sparkDF.show()
+```
+
+To utilize the above approach, it’s necessary to have [Apache Arrow installed and compatible with Spark](https://spark.apache.org/docs/latest/sql-pyspark-pandas-with-arrow.html#recommended-pandas-and-pyarrow-versions). If Apache Arrow is not installed, you will encounter the following error message.
+
+```python
+\apps\Anaconda3\lib\site-packages\pyspark\sql\pandas\conversion.py:289: UserWarning: createDataFrame attempted Arrow optimization because 'spark.sql.execution.arrow.pyspark.enabled' is set to true; however, failed by the reason below:
+  PyArrow >= 0.15.1 must be installed; however, it was not found.
+Attempting non-optimization as 'spark.sql.execution.arrow.pyspark.fallback.enabled' is set to true.
+```
+
+In the event of an error, Spark will automatically revert to its non-Arrow optimization implementation. This behavior can be managed through the `spark.sql.execution.arrow.pyspark.fallback.enabled parameter`.
+
+```python
+spark.conf.set("spark.sql.execution.arrow.pyspark.fallback.enabled","true")
+```
+
+**Note** that Apache Arrow does not support complex types like  `MapType`, `ArrayType` of `TimestampType`, and nested [StructType](https://sparkbyexamples.com/pyspark/pyspark-structtype-and-structfield).
+
+## Complete Example of Convert Pandas to Spark DataFrame
+
+```python
+import pandas as pd    
+data = [['Scott', 50], ['Jeff', 45], ['Thomas', 54],['Ann',34]] 
+  
+# Create the pandas DataFrame 
+pandasDF = pd.DataFrame(data, columns = ['Name', 'Age']) 
+  
+# print dataframe. 
+print(pandasDF)
+
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder \
+    .master("local[1]") \
+    .appName("SparkByExamples.com") \
+    .getOrCreate()
+
+sparkDF=spark.createDataFrame(pandasDF) 
+sparkDF.printSchema()
+sparkDF.show()
+
+#sparkDF=spark.createDataFrame(pandasDF.astype(str)) 
+from pyspark.sql.types import StructType,StructField, StringType, IntegerType
+mySchema = StructType([ StructField("First Name", StringType(), True)\
+                       ,StructField("Age", IntegerType(), True)])
+
+sparkDF2 = spark.createDataFrame(pandasDF,schema=mySchema)
+sparkDF2.printSchema()
+sparkDF2.show()
+
+# Enable Apache Arrow to convert Pandas to PySpark DataFrame
+spark.conf.set("spark.sql.execution.arrow.enabled","true")
+sparkDF2=spark.createDataFrame(pandasDF) 
+sparkDF2.printSchema()
+sparkDF2.show()
+
+#Convert PySpark DataFrame to Pandas
+pandasDF2=sparkDF2.select("*").toPandas
+print(pandasDF2)
+```
+
 # References
 
 * Convert Pandas to PySpark (Spark) DataFrame: https://sparkbyexamples.com/pandas/convert-pandas-to-pyspark-dataframe/
