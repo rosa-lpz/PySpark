@@ -246,7 +246,7 @@ pdf_new = df_spark.toPandas()Powered By
 ```
 ## Change Column Names & DataTypes while Converting
 
-If you want to change the schema (column name & data type) while converting pandas to PySpark DataFrame, create a [PySpark Schema using StructType](https://sparkbyexamples.com/pyspark/pyspark-structtype-and-structfield/) and use it for the schema.
+If we want to change the schema (column name & data type) while converting pandas to PySpark DataFrame, we can create a [PySpark Schema using StructType](https://sparkbyexamples.com/pyspark/pyspark-structtype-and-structfield/) and use it for the schema.
 
 ```python
 from pyspark.sql.types import StructType,StructField, StringType, IntegerType
